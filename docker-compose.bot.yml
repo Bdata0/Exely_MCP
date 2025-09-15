@@ -1,0 +1,9 @@
+services:
+  telegram_bot:
+    build: .
+    container_name: exely_telegram_bot
+    command: ["python", "telegram_bot.py"]
+    env_file: .env.bot.prod
+    volumes:
+      - ./telegram_bot_log.txt:/app/telegram_bot_log.txt
+    restart: always

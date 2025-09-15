@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.idea/
+mcp_log.txt
+telegram_bot_log.txt

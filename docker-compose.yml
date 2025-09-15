@@ -1,0 +1,23 @@
+services:
+  mcp_server:
+    build: .
+    container_name: exely_mcp_server
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file: .env.prod
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mcp_log.txt:/app/mcp_log.txt
+    restart: always
+  telegram_bot:
+    build: .
+    container_name: exely_telegram_bot
+    command: ["python", "telegram_bot.py"]
+    env_file: .env.prod
+    depends_on:
+      - mcp_server
+    volumes:
+      - ./telegram_bot_log.txt:/app/telegram_bot_log.txt
+    restart: always
+    environment:
+      - MCP_SERVER_HOST=mcp_server
