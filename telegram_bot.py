@@ -80,7 +80,7 @@ if not settings.TELEGRAM_BOT_TOKEN:
 
 bot = telebot.TeleBot(settings.TELEGRAM_BOT_TOKEN, threaded=False, parse_mode="HTML")
 
-MCP_SERVER_URL_FOR_CLIENT = f"http://localhost:{settings.MCP_SERVER_PORT}/mcp_api/mcp"
+MCP_SERVER_URL_FOR_CLIENT = f"http://{settings.MCP_SERVER_HOST}:{settings.MCP_SERVER_PORT}/mcp_api/mcp"
 logger.info(f"Telegram бот будет подключаться к MCP серверу по адресу: {MCP_SERVER_URL_FOR_CLIENT}")
 mcp_client = FastMCPClient(MCP_SERVER_URL_FOR_CLIENT)
 
