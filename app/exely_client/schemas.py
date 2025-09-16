@@ -48,7 +48,7 @@ class HotelAvailabilityCriterionHotel(BaseModel):
 
 class HotelAvailabilityCriterion(BaseModel):
     ref: Optional[str] = Field("0", description="ID for request-response reference.")
-    hotels: List[HotelAvailabilityCriterionHotel] = Field(..., min_items=1, description="List of hotels to search.")
+    hotels: List[HotelAvailabilityCriterionHotel] = Field(..., min_length=1, description="List of hotels to search.")
     dates: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2};\d{4}-\d{2}-\d{2}$", description="Stay dates as 'YYYY-MM-DD;YYYY-MM-DD'.")
     adults: conint(ge=0) = Field(..., description="Number of adult guests.")
     children: Optional[str] = Field(None, pattern=r"^(\d{1,2}(,\d{1,2})*)?$", description="Comma-separated ages (e.g., '5,10').")
@@ -56,7 +56,7 @@ class HotelAvailabilityCriterion(BaseModel):
 class HotelAvailabilityRequestParams(BaseModel):
     include_transfers: bool = Field(..., description="Include transfers in response.")
     language: str = Field(..., description="Language of the response.")
-    criterions: List[HotelAvailabilityCriterion] = Field(..., min_items=1, description="Request criteria.")
+    criterions: List[HotelAvailabilityCriterion] = Field(..., min_length=1, description="Request criteria.")
     include_rates: Optional[bool] = Field(True, description="Include rate plan details.")
     include_all_placements: Optional[bool] = Field(True, description="Include all guest placements.")
     include_promo_restricted: Optional[bool] = Field(True, description="Include promo-restricted rates.")
@@ -213,7 +213,7 @@ class RoomTypeReservationPlacement(BaseModel):
 
 class RoomTypeReservation(BaseModel):
     code: str
-    placements: List[RoomTypeReservationPlacement] = Field(..., min_items=1)
+    placements: List[RoomTypeReservationPlacement] = Field(..., min_length=1)
     preferences: List[dict] = Field(default_factory=list)
 
 class RatePlanReservation(BaseModel):
@@ -226,7 +226,7 @@ class GuestCountDetailAPI(BaseModel):
     age: Optional[int] = Field(None, ge=0)
 
 class GuestCountInfoAPI(BaseModel):
-    guest_counts: List[GuestCountDetailAPI] = Field(..., min_items=1)
+    guest_counts: List[GuestCountDetailAPI] = Field(..., min_length=1)
     adults: Optional[int] = None
     children: Optional[int] = None
     index: Optional[Union[int, str]] = None
@@ -256,8 +256,8 @@ class CustomerContactEmail(BaseModel):
     email_address: str
 
 class CustomerContactInfo(BaseModel):
-    phones: List[CustomerContactPhone] = Field(..., min_items=1)
-    emails: List[CustomerContactEmail] = Field(..., min_items=1)
+    phones: List[CustomerContactPhone] = Field(..., min_length=1)
+    emails: List[CustomerContactEmail] = Field(..., min_length=1)
 
 class CustomerReservation(BaseModel):
     first_name: str
@@ -270,10 +270,10 @@ class CustomerReservation(BaseModel):
 
 class RoomStayReservation(BaseModel):
     stay_dates: DateRangeStay
-    room_types: List[RoomTypeReservation] = Field(..., min_items=1)
-    rate_plans: List[RatePlanReservation] = Field(..., min_items=1)
+    room_types: List[RoomTypeReservation] = Field(..., min_length=1)
+    rate_plans: List[RatePlanReservation] = Field(..., min_length=1)
     guest_count_info: GuestCountInfoAPI
-    guests: List[GuestInfo] = Field(..., min_items=1)
+    guests: List[GuestInfo] = Field(..., min_length=1)
     services: List[ServiceReservation] = Field(default_factory=list)
 
 class PointOfSale(BaseModel):
@@ -285,7 +285,7 @@ class HotelReservationVerification(BaseModel):
 
 class HotelReservationRequestItem(BaseModel):
     hotel_ref: HotelRef
-    room_stays: List[RoomStayReservation] = Field(..., min_items=1)
+    room_stays: List[RoomStayReservation] = Field(..., min_length=1)
     transfers: List[ServiceReservation] = Field(default_factory=list)
     services: List[ServiceReservation] = Field(default_factory=list)
     number: Optional[str] = None
@@ -295,7 +295,7 @@ class HotelReservationRequestItem(BaseModel):
 
 class HotelReservationRequest(BaseModel):
     language: str
-    hotel_reservations: List[HotelReservationRequestItem] = Field(..., min_items=1)
+    hotel_reservations: List[HotelReservationRequestItem] = Field(..., min_length=1)
     currency: constr(min_length=3, max_length=3)
     include_extra_stay_options: Optional[bool] = Field(False)
     include_guarantee_options: Optional[bool] = Field(False)
@@ -440,7 +440,7 @@ class CancelHotelReservationRef(BaseModel):
     verification: CancelReservationVerification
 
 class CancelReservationRequestPayload(BaseModel):
-    hotel_reservation_refs: List[CancelHotelReservationRef] = Field(..., min_items=1)
+    hotel_reservation_refs: List[CancelHotelReservationRef] = Field(..., min_length=1)
     reasons: Optional[List[CancelReservationReason]] = None
     language: str
 
