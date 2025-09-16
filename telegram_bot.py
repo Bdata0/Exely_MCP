@@ -490,7 +490,7 @@ async def handle_text_messages_async(message: types.Message, is_command_start: b
                 bot.send_message(user_id, clarify_msg); add_to_dialog_history(user_id, "assistant_clarification", clarify_msg)
                 state["action"] = USER_ACTION_AWAITING_BOOKING_DETAILS ; user_states[user_id] = state; return
 
-            if "customer" in tool_params.model_fields and tool_params.customer: # Should be model_fields_set if Pydantic v2
+            if "customer" in type(tool_params).model_fields and tool_params.customer:Add minor fix
                  state_data["context_customer_info"] = tool_params.customer.model_dump(exclude_none=True)
                  logger.debug(f"Информация о заказчике сохранена в контекст: {state_data['context_customer_info']}")
             actual_tool_result = await create_exely_reservation_and_get_link(tool_params)
