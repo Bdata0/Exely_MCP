@@ -761,13 +761,6 @@ async def handle_callback_query_async(call: types.CallbackQuery):
 def run_bot():
     logger.info(f"Telegram Бот (LLM Версия) запускается с токеном: {settings.TELEGRAM_BOT_TOKEN[:10]}...")
     try:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_closed(): loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
         bot.polling(non_stop=True, skip_pending=True)
     except Exception as e:
         logger.critical(f"Критическая ошибка в работе бота (polling): {e}", exc_info=True)
