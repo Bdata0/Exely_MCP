@@ -635,13 +635,16 @@ async def handle_text_messages_async(message: types.Message, is_command_start: b
                  final_booking_message += f"\n\n<b>API Ошибки (отладка):</b>\n<pre>{json.dumps(res.details_api_errors, indent=2, ensure_ascii=False)}</pre>"
 
             markup_booking = types.InlineKeyboardMarkup()
-            if res.booking_number and res.cancellation_code and res.status.lower() not in ["error", "failed", "error_api", "error_internal", "error_unexpected_response", "cancelled"]:
-                callback_data_cancel = f"cancel_{res.booking_number}_{res.cancellation_code}"
-                markup_booking.add(types.InlineKeyboardButton("Отменить это бронирование", callback_data=callback_data_cancel))
 
             bot.send_message(user_id, final_booking_message, reply_markup=markup_booking if markup_booking.keyboard else None, parse_mode="HTML")
 
-            if res.payment_url: bot.send_message(user_id, f"Ссылка на оплату: {res.payment_url}")
+            if res.payment_url:
+                pay_button = types.InlineKeyboardButton("Оплатить", url=res.payment_url)
+                markup_booking.add(pay_button)
+            if res.booking_number and res.cancellation_code and res.status.lower() not in ["error", "failed", "error_api", "error_internal", "error_unexpected_response", "cancelled"]:
+                callback_data_cancel = f"cancel_{res.booking_number}_{res.cancellation_code}"
+                cancel_button = types.InlineKeyboardButton("Отменить это бронирование", callback_data=callback_data_cancel)
+                markup_booking.add(cancel_button)
 
             add_to_dialog_history(user_id, "assistant", final_booking_message.replace("<b>", "").replace("</b>", "").replace("<i>", "").replace("</i>", "").replace("<pre>", "").replace("</pre>", ""))
 
