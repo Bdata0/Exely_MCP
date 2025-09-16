@@ -597,7 +597,7 @@ async def handle_text_messages_async(message: types.Message, is_command_start: b
                 check_in_display = datetime.strptime(check_in_date_str_api, "%Y-%m-%d").strftime("%d-%m-%Y") if check_in_date_str_api != "не указана" else "не указана"
                 check_out_display = datetime.strptime(check_out_date_str_api, "%Y-%m-%d").strftime("%d-%m-%Y") if check_out_date_str_api != "не указана" else "не указана"
             except ValueError:
-                check_in_display, check_out_display = check_in_date_str_api, check_out_date_str_api # Fallback if parsing fails
+                check_in_display, check_out_display = check_in_date_str_api, check_out_date_str_api
 
             guests_for_reservation_ctx: List[GuestDetailLLM] = []
             create_tool_args_for_message = tool_arguments_from_llm
@@ -619,7 +619,7 @@ async def handle_text_messages_async(message: types.Message, is_command_start: b
             if res.cancellation_code: message_parts.append(f"Код отмены: {res.cancellation_code}")
             message_parts.append(f"\n<b>Отель:</b> {hotel_name_display}")
             message_parts.append(f"<b>Тип номера:</b> {room_type_name_display}")
-            message_parts.append(f"<b>Даты:</b> с {check_in_display} по {check_out_display}") # Formatted dates
+            message_parts.append(f"<b>Даты:</b> с {check_in_display} по {check_out_display}")
             message_parts.append(f"<b>Гости:</b> {guests_summary_for_message}")
             message_parts.append(f"<b>Общая стоимость:</b> {total_price_info}")
             message_parts.append(f"\n<b>Данные заказчика:</b>")
@@ -628,46 +628,31 @@ async def handle_text_messages_async(message: types.Message, is_command_start: b
             message_parts.append(f"  Телефон: {customer_phone}")
 
             if res.error_message: message_parts.append(f"\n<b>Примечание от системы:</b> {res.error_message}")
-
             final_booking_message = "\n".join(message_parts)
 
             if settings.DEBUG_MODE and res.details_api_errors:
                  final_booking_message += f"\n\n<b>API Ошибки (отладка):</b>\n<pre>{json.dumps(res.details_api_errors, indent=2, ensure_ascii=False)}</pre>"
 
             markup_booking = types.InlineKeyboardMarkup()
+            booking_successful = res.status.lower() not in ["error", "failed", "error_api", "error_internal", "error_unexpected_response", "cancelled"]
+
+            if booking_successful:
+                if res.status.lower() == 'unconfirmed' and res.payment_url:
+                    markup_booking.add(types.InlineKeyboardButton("✅ Оплатить", url=res.payment_url))
+
+                if res.booking_number and res.cancellation_code:
+                     if res.status.lower() in ["confirmed", "confirmed_by_ota", "unconfirmed"]: # Добавил unconfirmed, т.к. код отмены уже есть
+                        callback_data_cancel = f"cancel_{res.booking_number}_{res.cancellation_code}"
+                        markup_booking.add(types.InlineKeyboardButton("❌ Отменить это бронирование", callback_data=callback_data_cancel))
 
             bot.send_message(user_id, final_booking_message, reply_markup=markup_booking if markup_booking.keyboard else None, parse_mode="HTML")
 
-            if res.payment_url:
-                pay_button = types.InlineKeyboardButton("Оплатить", url=res.payment_url)
-                markup_booking.add(pay_button)
-            if res.booking_number and res.cancellation_code and res.status.lower() not in ["error", "failed", "error_api", "error_internal", "error_unexpected_response", "cancelled"]:
-                callback_data_cancel = f"cancel_{res.booking_number}_{res.cancellation_code}"
-                cancel_button = types.InlineKeyboardButton("Отменить это бронирование", callback_data=callback_data_cancel)
-                markup_booking.add(cancel_button)
-
             add_to_dialog_history(user_id, "assistant", final_booking_message.replace("<b>", "").replace("</b>", "").replace("<i>", "").replace("</i>", "").replace("<pre>", "").replace("</pre>", ""))
 
-            if res.status.lower() not in ["error", "failed", "error_api", "error_internal", "error_unexpected_response", "cancelled"]:
+            if booking_successful:
                 reset_user_action_and_search_context(user_id)
                 reset_full_search_parameters(user_id, reset_hotel_info=True)
-            state["action"] = None
-        elif isinstance(actual_tool_result, CancelReservationResult):
-            res: CancelReservationResult = actual_tool_result
-            bot.send_message(user_id, f"Результат отмены: {res.message} (Статус: {res.status})")
-            add_to_dialog_history(user_id, "assistant", f"Результат отмены: {res.message} (Статус: {res.status})")
-            if res.status.lower() == "cancelled": # Check specifically for cancelled status
-                reset_user_action_and_search_context(user_id)
-                reset_full_search_parameters(user_id, reset_hotel_info=True)
-            state["action"] = None
-        elif isinstance(actual_tool_result, HotelPublicInfoResult):
-            logger.warning(f"Обработка HotelPublicInfoResult В КОНЦЕ handle_text_messages_async. Это НЕ ОЖИДАЛОСЬ.")
-            state["action"] = USER_ACTION_AWAITING_CLARIFICATION
-        elif tool_name_to_call not in ["get_exely_booking_options", "get_hotel_public_info"]:
-            logger.error(f"Инструмент '{tool_name_to_call}' вернул неожиданный тип результата: {type(actual_tool_result)}, содержимое: {actual_tool_result}")
-            fallback_message = "Я обработал ваш запрос, но результат неясен. Не могли бы вы попробовать перефразировать или начать новый поиск?"
-            bot.send_message(user_id, fallback_message)
-            add_to_dialog_history(user_id, "assistant_error", fallback_message)
+
             state["action"] = None
 
     user_states[user_id] = state
